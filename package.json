@@ -1,0 +1,17 @@
+{
+  "name": "replit-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.22.1",
+    "firebase-admin": "^13.6.1",
+    "twilio": "^5.12.1"
+  }
+}
