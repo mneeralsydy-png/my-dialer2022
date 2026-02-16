@@ -9,31 +9,43 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 
 const app = express();
-const port = 5000;
+// Render يستخدم المنفذ 10000 تلقائياً
+const port = process.env.PORT || 10000; 
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- Firebase Init ---
+// --- Firebase Init (المعدل ليعمل على Render) ---
 let db;
 try {
-    const serviceAccount = require('./service-account.json');
-    if (!serviceAccount.project_id) throw new Error("Invalid service-account.json");
+    // قراءة المفتاح من متغيرات البيئة بدلاً من الملف
+    const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+    if (!serviceAccountVar) {
+        throw new Error("Missing FIREBASE_SERVICE_ACCOUNT in Environment Variables");
+    }
+
+    // معالجة مشكلة الرموز \n داخل المفتاح السري
+    const serviceAccount = JSON.parse(serviceAccountVar.replace(/\\n/g, '\n'));
+
     admin.initializeApp({ 
         credential: admin.credential.cert(serviceAccount) 
     });
-    console.log("✅ Firebase Admin Connected successfully");
+    console.log("✅ Firebase Admin Connected successfully via Env Var");
     db = admin.firestore();
 } catch (e) {
-    console.error("❌ Firebase Admin critical failure:", e.message);
+    console.error("❌ Firebase Admin failure:", e.message);
+    // محاولة أخيرة باستخدام Project ID فقط
     try {
-        admin.initializeApp({ projectId: "call-now-24582" });
+        if (!admin.apps.length) {
+            admin.initializeApp({ projectId: "call-now-24582" });
+        }
         db = admin.firestore();
-        console.log("⚠️ Fallback to Project ID (Note: Database ops may fail in Replit without auth)");
+        console.log("⚠️ Operating with limited Firebase (Fallback mode)");
     } catch (err) {
-        console.error("Failed to initialize Firebase fallback:", err.message);
+        console.error("Critical: Could not initialize Firebase at all.");
     }
 }
 
@@ -42,8 +54,7 @@ app.get('/token', (req, res) => {
   const identity = req.query.identity || 'user_' + Math.floor(Math.random() * 1000);
 
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_API_KEY || !process.env.TWILIO_API_SECRET) {
-      console.error("❌ Missing Twilio environment variables");
-      return res.status(500).send({ error: "Twilio credentials not configured in Secrets" });
+      return res.status(500).send({ error: "Twilio credentials not configured" });
   }
 
   try {
@@ -60,13 +71,8 @@ app.get('/token', (req, res) => {
     });
 
     accessToken.addGrant(grant);
-
-    res.send({
-      token: accessToken.toJwt(),
-      identity: identity
-    });
+    res.send({ token: accessToken.toJwt(), identity: identity });
   } catch (error) {
-    console.error("❌ Token generation error:", error);
     res.status(500).send({ error: error.message });
   }
 });
@@ -75,21 +81,12 @@ app.get('/token', (req, res) => {
 app.post('/voice', (req, res) => {
   const twiml = new VoiceResponse();
   const to = req.body.To;
-
   if (to) {
-    const dial = twiml.dial({ 
-        callerId: process.env.TWILIO_PHONE_NUMBER
-    });
-
-    if (/^[\d\+\-\(\) ]+$/.test(to)) {
-      dial.number(to);
-    } else {
-      dial.client(to);
-    }
+    const dial = twiml.dial({ callerId: process.env.TWILIO_PHONE_NUMBER });
+    if (/^[\d\+\-\(\) ]+$/.test(to)) { dial.number(to); } else { dial.client(to); }
   } else {
     twiml.say({ language: 'ar-SA' }, 'مرحباً، لم يتم استلام رقم للاتصال به.');
   }
-
   res.type('text/xml');
   res.send(twiml.toString());
 });
@@ -103,18 +100,16 @@ app.post('/send-sms', async (req, res) => {
     if (!userDoc.exists) return res.status(404).send('User not found');
     const userData = userDoc.data();
     const cost = 0.05;
-
     if (userData.balance < cost) return res.status(400).send('Insufficient balance');
 
     const message = await twilioClient.messages.create({ body: body, from: process.env.TWILIO_PHONE_NUMBER, to: to });
-
     await db.collection('users').doc(userUid).update({
       balance: admin.firestore.FieldValue.increment(-cost),
       transactions: admin.firestore.FieldValue.arrayUnion({ type: 'SMS', amount: -cost, date: new Date().toISOString() })
     });
     res.send({ success: true, sid: message.sid });
   } catch (error) {
-    console.error(error); res.status(500).send(error.message);
+    res.status(500).send(error.message);
   }
 });
 
@@ -123,6 +118,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`🚀 Server running on port ${port}`);
 });
-
