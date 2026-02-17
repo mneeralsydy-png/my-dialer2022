@@ -10,48 +10,66 @@ const admin = require('firebase-admin');
 
 const app = express();
 // Render يستخدم المنفذ 10000 تلقائياً
-const port = process.env.PORT || 10000; 
+const port = 5000; 
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- Firebase Init (المعدل ليعمل على Render) ---
+// --- Firebase Init (التعديل الجديد) ---
 let db;
 try {
-    // قراءة المفتاح من متغيرات البيئة بدلاً من الملف
-    const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
+    // الطريقة الأفضل: بناء الكائن يدوياً من متغيرات منفصلة
+    // تأكد من ضبط هذه المتغيرات الثلاثة في Render
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+        
+        const serviceAccount = {
+            "type": "service_account",
+            "project_id": process.env.FIREBASE_PROJECT_ID,
+            "private_key_id": process.env.FIREBASE_PRIVATE_KEY_ID, // اختياري
+            "private_key": process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), // معالجة الأسطر هنا فقط
+            "client_email": process.env.FIREBASE_CLIENT_EMAIL,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.FIREBASE_CLIENT_EMAIL)}`
+        };
 
-    if (!serviceAccountVar) {
-        throw new Error("Missing FIREBASE_SERVICE_ACCOUNT in Environment Variables");
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        
+        console.log("✅ Firebase Admin Connected successfully via Separate Env Vars");
+        db = admin.firestore();
+
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        // دعم الطريقة القديمة (JSON كامل) كاحتياط، لكن بدون استبدال الأسطر قبل البارس
+        // يجب أن يكون المتغير في Missing عبارة عن سطر واحد مضغوط (Minified JSON)
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        console.log("✅ Firebase Admin Connected via Full JSON Var");
+        db = admin.firestore();
+    } else {
+        throw new Error("Missing Firebase Credentials");
     }
 
-    // معالجة مشكلة الرموز \n داخل المفتاح السري
-    const serviceAccount = JSON.parse(serviceAccountVar.replace(/\\n/g, '\n'));
-
-    admin.initializeApp({ 
-        credential: admin.credential.cert(serviceAccount) 
-    });
-    console.log("✅ Firebase Admin Connected successfully via Env Var");
-    db = admin.firestore();
 } catch (e) {
     console.error("❌ Firebase Admin failure:", e.message);
-    // محاولة أخيرة باستخدام Project ID فقط
+    // المحاولة الأخيرة باستخدام معرف المشروع فقط
     try {
         if (!admin.apps.length) {
-            admin.initializeApp({ projectId: "call-now-24582" });
+            admin.initializeApp({ projectId: "call-now-24582" }); // تأكد من أن هذا المعرف صحيح
         }
         db = admin.firestore();
         console.log("⚠️ Operating with limited Firebase (Fallback mode)");
     } catch (err) {
         console.error("Critical: Could not initialize Firebase at all.");
     }
-}
-
-// 1. Token Generation
+    }
+// Token1. Token Generation
 app.get('/token', (req, res) => {
-  const identity = req.query.identity || 'user_' + Math.floor(Math.random() * 1000);
+identityidentity = req.query.identity || 'user_' + Math.floor(Math.random() * 1000);
 
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_API_KEY || !process.env.TWILIO_API_SECRET) {
       return res.status(500).send({ error: "Twilio credentials not configured" });
