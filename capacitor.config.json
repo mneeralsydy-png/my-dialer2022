@@ -1,0 +1,36 @@
+{
+  "appId": "com.abuzahra.app",
+  "appName": "أبو الزهراء",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "android/debug.keystore",
+      "keystoreAlias": "androiddebugkey",
+      "keystoreAliasPassword": "android",
+      "keystorePassword": "android"
+    }
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0078D7"
+    },
+    "LocalNotifications": {
+      "sound": "beep.wav",
+      "smallIcon": "ic_stat_icon_config_sample"
+    }
+  },
+  "android": {
+    "permissions": [
+      "INTERNET",
+      "RECORD_AUDIO",
+      "READ_CONTACTS",
+      "WRITE_EXTERNAL_STORAGE",
+      "READ_EXTERNAL_STORAGE"
+    ]
+  }
+}
