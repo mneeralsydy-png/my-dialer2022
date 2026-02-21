@@ -3,6 +3,7 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,15 +11,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Create package.json if missing
+        run: |
+          if [ ! -f package.json ]; then
+            echo '{"name": "my-app", "version": "1.0.0", "dependencies": {}}' > package.json
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Tools
+      - name: Install Capacitor
         run: |
-          npm install
           npm install @capacitor/cli @capacitor/core @capacitor/android
+
+      - name: Initialize Capacitor Config
+        run: |
+          if [ ! -f capacitor.config.json ]; then
+            npx cap init my-app com.example.myapp --web-dir www
+          fi
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -26,8 +38,9 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Sync and Build
+      - name: Build Android Project
         run: |
+          mkdir -p www # التأكد من وجود مجلد الويب
           npx cap add android || true
           npx cap sync android
           cd android
@@ -37,5 +50,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-app-bundle
+          name: final-android-app
           path: android/app/build/outputs/apk/debug/app-debug.apk
