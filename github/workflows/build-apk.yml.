@@ -11,12 +11,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # تحديث للنسخة الرابعة
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4 # تحديث للنسخة الرابعة
+        uses: actions/setup-node@v4
         with:
-          node-version: '20' # نسخة أحدث ومستقرة
+          node-version: '20'
 
       - name: Install Dependencies
         run: |
@@ -24,7 +24,7 @@ jobs:
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Setup Java
-        uses: actions/setup-java@v4 # تحديث للنسخة الرابعة
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -38,7 +38,7 @@ jobs:
           ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4 # تحديث للنسخة الرابعة
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
