@@ -8,23 +8,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: |
+
+      - name: Install Capacitor CLI and Deps
+        run: |
           npm install
-          npm install @capacitor/android
-      - uses: actions/setup-java@v4
+          npm install @capacitor/core @capacitor/android
+          npm install @capacitor/cli # هذا السطر هو حل مشكلة الصورة الأخيرة
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      - run: |
+
+      - name: Build Android Project
+        run: |
           npx cap add android || true
           npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: my-final-app
           path: android/app/build/outputs/apk/debug/app-debug.apk
