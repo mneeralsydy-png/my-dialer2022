@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -12,33 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4 # تحديث للنسخة الرابعة
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4 # تحديث للنسخة الرابعة
+        with:
+          node-version: '20' # نسخة أحدث ومستقرة
 
-    - name: Install Dependencies
-      run: npm install
+      - name: Install Dependencies
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
-    - name: Setup Java
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Setup Java
+        uses: actions/setup-java@v4 # تحديث للنسخة الرابعة
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-    - name: Build Android APK
-      run: |
-        npm install @capacitor/android
-        npx cap add android
-        npx cap sync android
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+      - name: Build Android Project
+        run: |
+          npx cap add android || true
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4 # تحديث للنسخة الرابعة
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
