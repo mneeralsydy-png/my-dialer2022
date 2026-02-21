@@ -7,18 +7,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Node.js
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Capacitor CLI and Deps
+      - name: Install Tools
         run: |
           npm install
-          npm install @capacitor/core @capacitor/android
-          npm install @capacitor/cli # هذا السطر هو حل مشكلة الصورة الأخيرة
+          npm install @capacitor/cli @capacitor/core @capacitor/android
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -26,7 +26,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Build Android Project
+      - name: Sync and Build
         run: |
           npx cap add android || true
           npx cap sync android
@@ -37,5 +37,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-final-app
+          name: my-app-bundle
           path: android/app/build/outputs/apk/debug/app-debug.apk
