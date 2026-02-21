@@ -473,7 +473,7 @@
 </div>
 
 <script>
-    // --- إعدادات Firebase (استخدام المفاتيح الصحيحة) ---
+    // --- إعدادات Firebase (تم إضافة المفاتيح الصحيحة) ---
     const firebaseConfig = {
         apiKey: "AIzaSyD8hrO2kX1zXaA46PImzMGqOt4iTwhXKI0",
         authDomain: "call-now-24582.firebaseapp.com",
@@ -490,6 +490,7 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // --- متغيرات الحالة ---
     let device = null;
     let currentUser = null;
     let dialNumber = "";
@@ -697,7 +698,11 @@
         document.getElementById('call-name-display').innerText = displayName;
 
         if (device) {
-            device.connect({ To: dialNumber, CustomDisplayName: displayName, callerId: '+12365066055' });
+            device.connect({ 
+                To: dialNumber, 
+                CustomDisplayName: displayName, 
+                callerId: '+12365066055' // رقمك من Twilio
+            });
             updateBalance(-0.05);
             logCall(dialNumber, 'outgoing', 0.05);
         }
